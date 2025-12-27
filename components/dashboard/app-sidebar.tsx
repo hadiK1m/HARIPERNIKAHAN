@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { logoutAction } from "@/actions/auth"; // Import logout action
 
 const sidebarItems = [
     {
@@ -72,16 +73,26 @@ export function AppSidebar() {
                     })}
                 </nav>
 
-                {/* Footer Sidebar (User Profile) */}
+                {/* Footer Sidebar (User Profile & Logout) */}
                 <div className="border-t border-sidebar-border p-4">
                     <div className="flex items-center justify-between">
                         <div className="flex flex-col">
                             <span className="text-sm font-medium">Admin Wedding</span>
                             <span className="text-xs text-muted-foreground">admin@haripernikahan.com</span>
                         </div>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                            <LogOut className="h-4 w-4" />
-                        </Button>
+
+                        {/* Form Logout yang benar untuk Server Actions */}
+                        <form action={logoutAction}>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                type="submit"
+                                title="Keluar / Logout"
+                            >
+                                <LogOut className="h-4 w-4" />
+                            </Button>
+                        </form>
                     </div>
                 </div>
             </div>

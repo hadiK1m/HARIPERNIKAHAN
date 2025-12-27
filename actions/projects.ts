@@ -2,11 +2,11 @@
 
 import { db } from "@/db/drizzle";
 import { projects } from "@/db/schema";
-import { createClient } from "@/utils/supabase/server"; // Pastikan utils ini ada, atau gunakan logic auth sendiri
+import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-// 1. Definisikan Schema Validasi (Zod)
+// --- SCHEMA & VALIDATION ---
 const ProjectSchema = z.object({
     name: z.string().min(1, "Nama Project wajib diisi"),
     slug: z.string().min(3, "Slug minimal 3 karakter").regex(/^[a-z0-9-]+$/, "Hanya huruf kecil, angka, dan strip"),
@@ -16,7 +16,7 @@ const ProjectSchema = z.object({
     brideName: z.string().min(1, "Nama Wanita wajib diisi"),
     brideFather: z.string().optional(),
     brideMother: z.string().optional(),
-    akadDate: z.string().optional(), // Nanti dikonversi ke Date
+    akadDate: z.string().optional(),
     akadAddress: z.string().optional(),
     akadMaps: z.string().optional(),
     resepsiDate: z.string().optional(),
@@ -24,16 +24,25 @@ const ProjectSchema = z.object({
     resepsiMaps: z.string().optional(),
 });
 
+// --- ACTIONS ---
+
+// 1. GET Single Project
+export async function getProject(id: string) {
+    try {
+        const data = await db.query.projects.findFirst({
+            where: eq(projects.id, id),
+        });
+        return data;
+    } catch (error) {
+        return null;
+    }
+}
+
+// 2. CREATE Project
 export async function createProjectAction(formData: FormData) {
-    // 2. Cek Autentikasi (Opsional, sesuaikan dengan auth kamu)
-    // const supabase = createClient();
-    // const { data: { user } } = await supabase.auth.getUser();
-    // if (!user) throw new Error("Unauthorized");
+    // Hardcode user ID sementara (Nanti ganti dengan auth session user.id)
+    const userId = "00000000-0000-0000-0000-000000000000";
 
-    // Hardcode user ID sementara jika belum setup Auth lengkap
-    const userId = "00000000-0000-0000-0000-000000000000"; // Ganti dengan user.id nanti
-
-    // 3. Ambil data dari FormData
     const rawData = {
         name: formData.get("name"),
         slug: formData.get("slug"),
@@ -51,21 +60,21 @@ export async function createProjectAction(formData: FormData) {
         resepsiMaps: formData.get("resepsiMaps"),
     };
 
-    // 4. Validasi Data
     const validated = ProjectSchema.parse(rawData);
 
-    // 5. Simpan ke Database Drizzle
     const [newProject] = await db.insert(projects).values({
         userId: userId,
         name: validated.name,
         slug: validated.slug,
+        // Data Pria
         groomName: validated.groomName,
         groomFather: validated.groomFather,
         groomMother: validated.groomMother,
+        // Data Wanita (YANG TADI HILANG)
         brideName: validated.brideName,
         brideFather: validated.brideFather,
         brideMother: validated.brideMother,
-        // Konversi string date HTML ke Object Date JS
+        // Acara
         akadDate: validated.akadDate ? new Date(validated.akadDate) : null,
         resepsiDate: validated.resepsiDate ? new Date(validated.resepsiDate) : null,
         akadAddress: validated.akadAddress,
@@ -75,6 +84,11 @@ export async function createProjectAction(formData: FormData) {
         status: "draft",
     }).returning({ id: projects.id });
 
-    // 6. Redirect ke halaman detail project
     redirect(`/dashboard/${newProject.id}`);
+}
+
+// 3. DELETE Project
+export async function deleteProjectAction(id: string) {
+    await db.delete(projects).where(eq(projects.id, id));
+    redirect("/dashboard");
 }
