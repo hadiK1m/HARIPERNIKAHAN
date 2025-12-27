@@ -92,3 +92,15 @@ export async function deleteProjectAction(id: string) {
     await db.delete(projects).where(eq(projects.id, id));
     redirect("/dashboard");
 }
+
+// 4. GET Project by SLUG (Untuk Halaman Public)
+export async function getProjectBySlug(slug: string) {
+    try {
+        const data = await db.query.projects.findFirst({
+            where: eq(projects.slug, slug),
+        });
+        return data;
+    } catch (error) {
+        return null;
+    }
+}
